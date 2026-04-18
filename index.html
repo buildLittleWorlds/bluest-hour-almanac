@@ -545,6 +545,43 @@
   }
   .sentiment-fill { height: 100%; background: var(--accent); transition: width 0.5s ease; }
   .sentiment-fill.neg { background: var(--accent-2); }
+  .emotion-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 7px;
+    margin: 4px 0 10px;
+  }
+  .emotion-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 46px;
+    align-items: center;
+    gap: 10px;
+  }
+  .emotion-row .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .emotion-row .bar {
+    height: 4px;
+    background: var(--rule);
+    position: relative;
+  }
+  .emotion-row .fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.5s ease;
+  }
+  .emotion-row.primary .fill { background: var(--accent-2); }
+  .emotion-row .pct {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--ink-soft);
+  }
   .field-note .gloss {
     font-family: 'Source Serif 4', serif;
     font-style: italic;
@@ -817,7 +854,7 @@
   <div class="sec-head">
     <span class="sec-num">§ v.</span>
     <h2 class="sec-title">Field note &amp; sentiment</h2>
-    <span class="sec-meta">DistilBERT · WASM</span>
+    <span class="sec-meta">RoBERTa · GoEmotions · WASM</span>
   </div>
 
   <div class="journal">
@@ -836,7 +873,7 @@
     <div class="field-note" id="field-note">
       <div class="fn-head">
         <span>Classifier output</span>
-        <span>SST-2 · 67M params</span>
+        <span>GoEmotions · 28 labels</span>
       </div>
       <div id="field-note-body">
         <div class="placeholder">Awaiting entry. Write a line about the walk and press classify.</div>
@@ -1373,11 +1410,11 @@
     const statusEl = document.getElementById('model-status');
     const btn = document.getElementById('analyze-btn');
     try {
-      statusEl.textContent = 'Loading model ▸ ~67 MB';
+      statusEl.textContent = 'Loading model ▸ ~125 MB';
       const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.0.1');
       classifier = await pipeline(
-        'sentiment-analysis',
-        'Xenova/distilbert-base-uncased-finetuned-sst-2-english',
+        'text-classification',
+        'MicahB/roberta-base-go_emotions',
         { device: 'wasm' }
       );
       statusEl.textContent = 'Model ready';
@@ -1399,25 +1436,67 @@
     btn.textContent = 'Classifying…';
     try {
       const t0 = performance.now();
-      const result = await classifier(input);
+      const raw = await classifier(input, { top_k: 28 });
       const dt = Math.round(performance.now() - t0);
-      const { label, score } = result[0];
-      const pct = Math.round(score * 100);
-      const isPositive = label === 'POSITIVE';
-      const gloss = isPositive
-        ? 'A good evening for the blue light.'
-        : 'Even the difficult evenings have their own color.';
+      const all = Array.isArray(raw[0]) ? raw[0] : raw;
+      const kept = all
+        .filter(r => r.score >= 0.03 && r.label.toLowerCase() !== 'neutral')
+        .slice(0, 5);
+      const top = kept[0] || all[0];
+      const topPct = Math.round(top.score * 100);
+
+      const glosses = {
+        admiration: 'An evening that asked to be looked at.',
+        amusement: 'Some quiet amusement carried in the cooling air.',
+        approval: 'The hour agreed with itself.',
+        caring: 'A walk that kept someone in mind.',
+        curiosity: 'The sky did something worth wondering about.',
+        desire: 'Wanting, held in the blue interval.',
+        excitement: 'Even the dusk had something to announce.',
+        gratitude: 'A debt, gently paid in light.',
+        joy: 'A good evening for the blue light.',
+        love: 'Held, for twenty minutes, in something tender.',
+        optimism: 'Tomorrow already drafting itself along the horizon.',
+        pride: 'A quiet sort of standing-up-straight.',
+        relief: 'The day let go before it was asked.',
+        realization: 'Something arrived that had been walking alongside.',
+        surprise: 'An unexpected color at the edge of the hour.',
+        anger: 'Even difficult evenings have their own color.',
+        annoyance: 'A small fray in an otherwise blue hour.',
+        confusion: 'A walk through something unresolved.',
+        disappointment: 'Not every evening keeps its promises.',
+        disapproval: 'Something refused to settle.',
+        disgust: 'A taste the twilight could not rinse out.',
+        embarrassment: 'A small shame, carried into the dark.',
+        fear: 'The blue hour is also the hour of edges.',
+        grief: 'Even loss has a color, and this is close to it.',
+        nervousness: 'The hands found something to do along the walk.',
+        remorse: 'A walk that kept turning to look back.',
+        sadness: 'Blue, the way Didion meant it.',
+        neutral: 'A plain blue hour, which is its own kind of gift.',
+      };
+      const gloss = glosses[top.label.toLowerCase()] || 'The evening had its own color.';
+
+      const rows = kept.map((r, i) => {
+        const pct = Math.round(r.score * 100);
+        return `
+          <div class="emotion-row${i===0?' primary':''}">
+            <span class="label">${r.label.toLowerCase()}</span>
+            <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+            <span class="pct">${pct}%</span>
+          </div>`;
+      }).join('');
 
       body.innerHTML = `
         <div class="sentiment-row">
-          <span class="key">Label</span>
-          <span class="val">${label.toLowerCase()}</span>
+          <span class="key">Primary</span>
+          <span class="val">${top.label.toLowerCase()}</span>
         </div>
         <div class="sentiment-row">
           <span class="key">Confidence</span>
-          <span class="val mono">${pct}%</span>
+          <span class="val mono">${topPct}%</span>
         </div>
-        <div class="sentiment-bar"><div class="sentiment-fill${isPositive?'':' neg'}" style="width:${pct}%"></div></div>
+        <div class="emotion-list">${rows}</div>
         <div class="sentiment-row">
           <span class="key">Latency</span>
           <span class="val mono">${dt} ms · WASM</span>
