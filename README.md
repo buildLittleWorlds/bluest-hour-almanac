@@ -1,28 +1,41 @@
-# Bluest Hour — Almanac Edition
+---
+title: Bluest Hour Almanac
+emoji: 🌅
+colorFrom: gray
+colorTo: indigo
+sdk: static
+pinned: false
+license: mit
+short_description: Advanced almanac redesign of Bluest Hour with 28-emotion journal
+---
 
-An almanac/scientific redesign of [Bluest Hour](https://github.com/buildLittleWorlds/bluest-hour). A single self-contained HTML page: dateline masthead, ephemeris table, solar-altitude chart with civil/nautical/astro bands, seasonal blue-hour duration curve, terminal-styled walk journal that classifies entries across **28 fine-grained emotions** via [`MicahB/roberta-base-go_emotions`](https://huggingface.co/MicahB/roberta-base-go_emotions) (GoEmotions, in-browser WASM), and two-column science notes.
+# The Bluest Hour — Almanac Edition
 
-Typography: IBM Plex Mono + Source Serif 4. Paper / night mode toggle.
+An advanced redesign of [Bluest Hour](https://github.com/buildLittleWorlds/bluest-hour), built after the simpler project, journal, and paper already existed.
 
-## Run it
+This repo is now framed as **Stage 4** of the exemplar chain:
 
-```sh
-open index.html
-```
+1. `bluest-hour/research-journal.md`
+2. `bluest-hour/PAPER.md`
+3. `bluest-hour-almanac/` redesign
+4. `bluest-hour-almanac/PAPER.md`
 
-No build, no dependencies beyond the CDN fonts and the in-browser sentiment model.
+That means this project is still important, but it is no longer the first student target for Session 7.
 
-## Deployments
+## What changed in this version
 
-- **GitHub Pages**: this repository
-- **Hugging Face Space** (static SDK): [profplate/bluest-hour-almanac](https://huggingface.co/spaces/profplate/bluest-hour-almanac)
+- almanac / ephemeris visual language
+- static single-page HTML build
+- paper / night mode
+- richer field-note framing
+- in-browser **GoEmotions** classifier instead of a binary positive/negative baseline
 
-Both serve the same `index.html`; the model is cached in the browser after the first ~125 MB download.
+## Why keep it
 
-## Paper
+This version shows what can happen after the journal-first research path is clear. It is best used as:
 
-[**On the Almanac as Interface**](PAPER.md) — a commentary paper, in markdown, that reads the app as a small object about software-for-a-place. Masthead, epigraph, §§ I–XI, a seasonal ASCII chart, a Mermaid diagram, LaTeX for the Rayleigh/blue-hour math, and a colophon. Sits in the repo it describes.
+- advanced optional reading
+- a design case study
+- a later-stage continuation of the simpler Bluest Hour build
 
-## Origin
-
-This variant came out of a Claude Design session. The prior visual direction (twilight-gradient, glassmorphism) lives at [buildLittleWorlds/bluest-hour](https://github.com/buildLittleWorlds/bluest-hour) and is kept running in parallel.
+Source: [github.com/buildLittleWorlds/bluest-hour-almanac](https://github.com/buildLittleWorlds/bluest-hour-almanac)
